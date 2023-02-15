@@ -139,18 +139,18 @@ bool checkNFO(const std::string_view target_file, bool rewrite_file = false)
     //regex to find thumbnail tags
     std::regex thumb_search_regex("<thumb aspect=\"poster\" [^<]+>[^<]+<\\/thumb>");
 
-    std::ifstream nfoFile(target_file);
+    std::ifstream nfo_file(target_file);
 
     std::string file_contents{ "" };//full file input
 
     std::string line_output{ "" };//chunk input
 
-    while (std::getline(nfoFile, line_output))
+    while (std::getline(nfo_file, line_output))
     {
         file_contents += line_output;
     }
 
-    nfoFile.close();
+    nfo_file.close();
 
     //if nfo file contains any matching thumbnail sections
     if (std::regex_search(file_contents, thumb_search_regex))
@@ -204,9 +204,9 @@ bool checkNFO(const std::string_view target_file, bool rewrite_file = false)
         {
             //overwrite 'old' nfo
             std::cout << "\n\tWriting new NFO" << '\n';
-            std::ofstream newNfoFile(target_file, std::ofstream::trunc);
-            newNfoFile << new_file_data;
-            newNfoFile.close();
+            std::ofstream new_Nfo_File(target_file, std::ofstream::trunc);
+            new_Nfo_File << new_file_data;
+            new_Nfo_File.close();
         }
 
     }
@@ -240,6 +240,7 @@ bool checkParam(int argc, char* argv[], const char parameter_name[2])
 }
 
 
+
 int main(int argc, char* argv[])
 {
     if (argc < 2)
@@ -250,6 +251,30 @@ int main(int argc, char* argv[])
         std::cout << "no parameters to run as test" << '\n';
         return 0;
     }
+
+    bool directory_exists = false;
+
+    // This code block below sucks but checking for existing directories keeps throwing errors
+    try
+    {
+        if (!std::filesystem::exists(argv[1]))
+        {            
+            
+        }        
+        else
+            directory_exists = true;
+    }
+    catch(std::filesystem::filesystem_error const& ex)
+    {        
+    }
+
+    if (!directory_exists)
+    {
+        std::cout << "Directory Not found: " << argv[1] << '\n';
+        return 0;
+    }
+   
+
 
     auto remove_dead_links = checkParam(argc, argv, "-e");//remove dead links
     auto remove_dead_files = checkParam(argc, argv, "-d");//remove files without any links
@@ -264,7 +289,7 @@ int main(int argc, char* argv[])
 
     using dir_search = std::filesystem::recursive_directory_iterator;
 
-    std::vector<std::string> reviewList{};
+    std::vector<std::string> review_list{};
 
     std::cout << "Checking target directory [" << target_directory << "]" << '\n';
 
@@ -275,43 +300,43 @@ int main(int argc, char* argv[])
         
         if (fname_s.substr(fname_s.size() - 3, 3) == "nfo")//filer by NFO files
         {
-            reviewList.push_back(fname_s);//add file to review list            
+            review_list.push_back(fname_s);//add file to review list            
         }
         
     }
 
-    std::cout << "Found " << reviewList.size() << " items" << '\n';
+    std::cout << "Found " << review_list.size() << " items" << '\n';
 
-    std::vector<std::string> removeList{};
+    std::vector<std::string> remove_list{};
 
     //loop over all found nfo files
-    for (int i = 0; i != reviewList.size(); ++i)
+    for (int i = 0; i != review_list.size(); ++i)
     {
-        std::cout << "\n\nLoop: " << i << "/" << reviewList.size() - 1 << '\n';
-        auto fname = reviewList[i];
+        std::cout << "\n\nLoop: " << i << "/" << review_list.size() - 1 << '\n';
+        auto fname = review_list[i];
 
         auto check_result = checkNFO(fname, remove_dead_links);//check if nfo has at least one good thumbnail
 
         if (!check_result)//if item has no good thumbnail URLs in it add to delete list
-            removeList.push_back(fname);
+            remove_list.push_back(fname);
     }
     
 
-    std::cout << "\n\nREMOVING " << removeList.size() << ":" << '\n';
+    std::cout << "\n\nREMOVING " << remove_list.size() << ":" << '\n';
 
-    if (removeList.size() == 0)
+    if (remove_list.size() == 0)
         std::cout << "\tNothing";
 
     //delete all "bad" nfo files
-    for (const auto& removeItem : removeList)
+    for (const auto& remove_item : remove_list)
     {
-        std::cout << '\t' << removeItem;
+        std::cout << '\t' << remove_item;
 
         if (remove_dead_files)
         {
-            auto removeResult = std::remove(removeItem.c_str());
+            auto remove_result = std::remove(remove_item.c_str());
 
-            std::cout << " removed: " << (removeResult == 0 ? "OK" : "FAIL");
+            std::cout << " removed: " << (remove_result == 0 ? "OK" : "FAIL");
         }
 
         std::cout << '\n';

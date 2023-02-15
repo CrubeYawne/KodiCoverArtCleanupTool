@@ -18,19 +18,24 @@ Use the included parameters to act on target files.
 ## Example
 
 KodiCoverArtCleanupTool.exe D:\Movies\
+
 *Will scan directory and make no changes*
 
 KodiCoverArtCleanupTool.exe D:\Movies\ -d
+
 *Will scan directory and only remove files without any working cover art*
 
 KodiCoverArtCleanupTool.exe D:\Movies\ -e
+
 *Will scan directory and will remove cover art from files that are invalid(404)*
 
 KodiCoverArtCleanupTool.exe D:\Movies\ -e -d
+
 *Will scan directory and will remove cover art from files that are invalid(404) and remove files without any working cover art*
 
 
 ## Sample Console output
+```
 Checking target directory [D:\Movies\]
 Found 1438 items
 
@@ -75,6 +80,6 @@ REMOVING:
 	D:/Movie4.nfo
 	D:/Movie5.nfo
 	D:/Movie6.nfo
-	
+```	
 
 

@@ -1,4 +1,4 @@
-#Kodi Cover Art Cleanup Tool
+# Kodi Cover Art Cleanup Tool
 
 This is a command line tool used to cleanup exported NFO files used by KODI. 
 

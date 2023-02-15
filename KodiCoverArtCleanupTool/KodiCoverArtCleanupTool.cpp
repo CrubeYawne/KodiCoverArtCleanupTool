@@ -70,7 +70,7 @@ bool checkThumbnail(const std::string_view thumbnail_url)
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &writeToString);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &writeToString);//writing to string but not using. Prevent response going to std out
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &remote_file_content);        
 
         auto res = curl_easy_perform(curl);
@@ -79,7 +79,7 @@ bool checkThumbnail(const std::string_view thumbnail_url)
 
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_result_code);
 
-        std::cout << "\tHTTP CODE: " << http_result_code << '\n';
+        std::cout << "\tHTTP CODE: " << http_result_code << '\n';//output response
 
         if (res != CURLE_OK)//if the curl request worked properly
         {
@@ -101,7 +101,7 @@ bool checkThumbnail(const std::string_view thumbnail_url)
 
 
     //sleep to avoid destroying servers
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     
     return return_value;
 }
@@ -127,6 +127,7 @@ bool replace(std::string& str, const std::string& from, const std::string& to) {
 /// check an NFO for bad thumbnail images
 /// </summary>
 /// <param name="target_file">xml element with value being http url</param>
+/// <param name="rewrite_file">indicate whether original file should be changed</param>
 /// <returns>true if the file contains at least 1 good thumbnail</returns>
 bool checkNFO(const std::string_view target_file, bool rewrite_file = false)
 {
@@ -166,6 +167,7 @@ bool checkNFO(const std::string_view target_file, bool rewrite_file = false)
 
         bool has_good_thumbnails = false;
 
+        //loop over all thumbnail instances
         for (std::sregex_iterator i = thumb_begin; i != thumb_end && !has_good_thumbnails; ++i)
         {
             std::smatch match = *i;
@@ -200,6 +202,7 @@ bool checkNFO(const std::string_view target_file, bool rewrite_file = false)
 
         if (has_file_changed && rewrite_file)
         {
+            //overwrite 'old' nfo
             std::cout << "\n\tWriting new NFO" << '\n';
             std::ofstream newNfoFile(target_file, std::ofstream::trunc);
             newNfoFile << new_file_data;
@@ -217,14 +220,20 @@ bool checkNFO(const std::string_view target_file, bool rewrite_file = false)
     return nfo_return;
 }
 
+/// <summary>
+/// Check if an option has been provided from command line
+/// </summary>
+/// <param name="argc">number of arguments passed</param>
+/// <param name="argv">array of parameters as char array pointer</param>
+/// <param name="parameter_name">char array pointer to parameter to check for</param>
+/// <returns>true if the specified parameter was provided in command line</returns>
 bool checkParam(int argc, char* argv[], const char parameter_name[2])
 {
     auto has_parameter = false;
 
-    for (auto i = 0; i != argc && !has_parameter; ++i)
+    for (auto i = 0; i != argc && !has_parameter; ++i)//loop through each param
     {
-        //std::cout << (strcmp(argv[i], parameter_name) == 0) << argv[i] << parameter_name << '\n';
-        has_parameter = (strcmp(argv[i],parameter_name) == 0);
+        has_parameter = (strcmp(argv[i],parameter_name) == 0);//if text matches
     }
 
     return has_parameter;
@@ -242,11 +251,8 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    auto remove_dead_links = checkParam(argc, argv, "-e");
-    auto remove_dead_files = checkParam(argc, argv, "-d");
-
-    //auto remove_dead_links = false;
-    //auto remove_dead_files = false;
+    auto remove_dead_links = checkParam(argc, argv, "-e");//remove dead links
+    auto remove_dead_files = checkParam(argc, argv, "-d");//remove files without any links
 
     if (remove_dead_files)
         std::cout << "REMOVE DEAD FILES (-d) ENABLED" << '\n' << '\n';
@@ -262,14 +268,14 @@ int main(int argc, char* argv[])
 
     std::cout << "Checking target directory [" << target_directory << "]" << '\n';
 
+    /// loop over all files in target diretory
     for (const auto& dirEntry : dir_search(target_directory))
     {
         std::string fname_s{ dirEntry.path().generic_string() };
         
         if (fname_s.substr(fname_s.size() - 3, 3) == "nfo")//filer by NFO files
         {
-            reviewList.push_back(fname_s);
-            
+            reviewList.push_back(fname_s);//add file to review list            
         }
         
     }
@@ -278,12 +284,13 @@ int main(int argc, char* argv[])
 
     std::vector<std::string> removeList{};
 
+    //loop over all found nfo files
     for (int i = 0; i != reviewList.size(); ++i)
     {
         std::cout << "\n\nLoop: " << i << "/" << reviewList.size() - 1 << '\n';
         auto fname = reviewList[i];
 
-        auto check_result = checkNFO(fname, remove_dead_links);
+        auto check_result = checkNFO(fname, remove_dead_links);//check if nfo has at least one good thumbnail
 
         if (!check_result)//if item has no good thumbnail URLs in it add to delete list
             removeList.push_back(fname);
